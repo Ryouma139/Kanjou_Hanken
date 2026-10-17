@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from PIL import Image
 
 from . import analysis
@@ -112,6 +113,27 @@ class ViewTests(TestCase):
         self.assertEqual(e.share, "private")
         self.client.post(reverse("hanken:delete", args=[e.pk]))
         self.assertFalse(Entry.objects.filter(pk=e.pk).exists())
+
+    def test_calendar_counts_finished_stubs(self):
+        today = timezone.localdate()
+        make(self.a, "前後そろい", "sad", 3, "calm", 7)
+        make(self.a, "前後そろい2", "tired", 4, "joy", 8)
+        make(self.a, "鑑賞中", "tired", 4)
+        make(self.b, "他人の", "sad", 3, "calm", 7)
+        r = self.client.get(reverse("hanken:calendar"))
+        self.assertEqual(r.context["cal"]["total"], 2)
+        self.assertEqual(r.context["cal"]["days"], 1)
+        cell = next(c for w in r.context["cal"]["weeks"] for c in w if c["in_month"] and c["day"] == today.day)
+        self.assertEqual(cell["n"], 2)
+
+        r = self.client.get(reverse("hanken:calendar"), {"m": f"{today:%Y-%m}", "d": today.day})
+        self.assertContains(r, "前後そろい2")
+        self.assertNotContains(r, "鑑賞中</h3>")
+        self.assertNotContains(r, "他人の")
+
+    def test_calendar_ignores_bad_params(self):
+        for q in ({"m": "2026-13"}, {"m": "abc"}, {"m": "2026-02", "d": "31"}, {"d": "x"}):
+            self.assertEqual(self.client.get(reverse("hanken:calendar"), q).status_code, 200)
 
     def test_signup(self):
         self.client.logout()

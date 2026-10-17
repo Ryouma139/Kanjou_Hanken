@@ -29,6 +29,7 @@
     <a href="{% url 'hanken:record' %}"{% if tab == 'record' %} aria-current="page"{% endif %}>記録する</a>
     <a href="{% url 'hanken:mine' %}"{% if tab == 'mine' %} aria-current="page"{% endif %}>わたしの半券</a>
     <a href="{% url 'hanken:share' %}"{% if tab == 'share' %} aria-current="page"{% endif %}>みんなの変化</a>
+    <a href="{% url 'hanken:calendar' %}"{% if tab == 'calendar' %} aria-current="page"{% endif %}>カレンダー</a>
   </nav>
   {% endif %}
 

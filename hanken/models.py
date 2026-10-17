@@ -58,6 +58,13 @@ class Entry(models.Model):
         return self.after_mood - self.before_mood
 
     @property
+    def finished_on(self):
+        """観終わった日（日本時間）。観た後が未記録なら None。"""
+        if not self.is_done:
+            return None
+        return timezone.localtime(self.after_at or self.created_at).date()
+
+    @property
     def is_shared(self):
         return self.share != "private"
 

@@ -1,8 +1,11 @@
+from datetime import date
+
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from . import analysis
@@ -17,6 +20,10 @@ def author_label(entry, viewer):
     if entry.share == "anon":
         return "匿名さん"
     return entry.user.get_full_name() or entry.user.get_username()
+
+
+def own_label(entry):
+    return {"private": "自分だけ", "anon": "匿名で共有中"}.get(entry.share, "共有中")
 
 
 @login_required
@@ -63,7 +70,7 @@ def reflect(request, pk):
 def mine(request):
     entries = list(request.user.entries.all())
     for e in entries:
-        e.author = {"private": "自分だけ", "anon": "匿名で共有中"}.get(e.share, "共有中")
+        e.author = own_label(e)
     done = [e for e in entries if e.is_done]
     return render(request, "hanken/mine.html", {
         "tab": "mine",
@@ -75,6 +82,43 @@ def mine(request):
         "chart": analysis.slope_chart(done),
         "confirm": request.GET.get("confirm", ""),
     })
+
+
+def shift_month(year, month, step):
+    y, m = divmod(year * 12 + month - 1 + step, 12)
+    return y, m + 1
+
+
+@login_required
+def calendar(request):
+    today = timezone.localdate()
+    try:
+        year, month = map(int, request.GET.get("m", "").split("-"))
+        date(year, month, 1)
+    except ValueError:
+        year, month = today.year, today.month
+
+    entries = list(request.user.entries.exclude(after_emo="").filter(after_mood__isnull=False))
+    ctx = {
+        "tab": "calendar",
+        "year": year, "month": month, "ym": f"{year}-{month:02d}",
+        "prev": "{}-{:02d}".format(*shift_month(year, month, -1)),
+        "next": "{}-{:02d}".format(*shift_month(year, month, 1)),
+        "is_this_month": (year, month) == (today.year, today.month),
+        "weekdays": "日月火水木金土",
+        "cal": analysis.month_calendar(entries, year, month, today),
+    }
+
+    try:
+        picked = date(year, month, int(request.GET.get("d", "")))
+    except ValueError:
+        picked = None
+    if picked:
+        day_entries = [e for e in entries if e.finished_on == picked]
+        for e in day_entries:
+            e.author = own_label(e)
+        ctx.update({"picked": picked, "day_entries": day_entries})
+    return render(request, "hanken/calendar.html", ctx)
 
 
 @login_required

@@ -155,6 +155,24 @@ label.seg input:checked+span{background:var(--ink);color:var(--paper);border-col
 .care{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 
+/* calendar */
+.cal-head{align-items:center}
+.cal-head h2{flex:1;text-align:center}
+.cal-head .btn{font-size:18px;line-height:1;padding:6px 14px}
+.cal{width:100%;border-collapse:collapse;table-layout:fixed}
+.cal th{font:500 12px var(--f-mono);color:var(--muted);padding:4px 0;text-align:center}
+.cal th:first-child{color:var(--down)} .cal th:last-child{color:var(--accent)}
+.cal td{padding:2px;vertical-align:top}
+.cal .day{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:54px;padding:6px 2px;border-radius:8px;color:var(--ink);text-decoration:none}
+.cal .dn{font-size:13px}
+.cal .day.has{background:color-mix(in srgb,var(--accent) 12%,var(--card))}
+.cal .day.has:hover{background:color-mix(in srgb,var(--accent) 22%,var(--card))}
+.cal .cnt{font-size:16px;font-weight:700;color:var(--accent)}
+.cal td.today .dn{font-weight:700;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.cal td.on .day{box-shadow:inset 0 0 0 2px var(--accent)}
+.cal td.out .day{opacity:.35}
+.cal-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+
 @media (max-width:560px){.grid2{grid-template-columns:1fr}.stat .v{font-size:20px}h1{font-size:26px}}
 @media (max-width:420px){.stub{grid-template-columns:1fr 26px 1fr}.half{padding:10px 8px}.tile.emo b{font-size:20px}}
 @media (prefers-reduced-motion:no-preference){.stub,.reflect{animation:rise .35s ease-out both}@keyframes rise{from{transform:translateY(6px)}to{transform:none}}}

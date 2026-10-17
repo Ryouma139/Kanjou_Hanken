@@ -1,4 +1,5 @@
 """半券の集計。テンプレートにそのまま渡せる形で返す。"""
+import calendar
 from collections import Counter, defaultdict
 
 from .emotions import EMOTIONS, EMOTION_NAME
@@ -80,6 +81,21 @@ def slope_chart(entries, limit=10):
     ticks = [{"m": m, "y": round(_y(m), 1)} for m in (1, 5, 10)]
     return {**SLOPE, "lines": lines, "ticks": ticks, "label_y": SLOPE["h"] - 6,
             "tick_x": SLOPE["x1"] - 12}
+
+
+def month_calendar(entries, year, month, today=None):
+    """観る前＋観た後がそろった半券を1枚として、観終わった日ごとに数える（日曜はじまり）。"""
+    counts = Counter(e.finished_on for e in entries if e.is_done)
+    weeks = []
+    for week in calendar.Calendar(firstweekday=6).monthdatescalendar(year, month):
+        weeks.append([{
+            "day": d.day,
+            "in_month": d.month == month,
+            "n": counts[d] if d.month == month else 0,
+            "today": d == today,
+        } for d in week])
+    in_month = [n for d, n in counts.items() if (d.year, d.month) == (year, month)]
+    return {"weeks": weeks, "total": sum(in_month), "days": len(in_month)}
 
 
 def care_line(delta):
