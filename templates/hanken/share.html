@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load hanken_tags %}
+{% block title %}みんなの変化｜感情の半券{% endblock %}
+{% block content %}
+{% if not total %}
+  <div class="empty-state">
+    <h3>まだ共有された半券がありません</h3>
+    <p>観る前と観た後の両方が記録され、「共有」になっている半券が集まると、ここで「同じ気持ちで観始めた人が、観たあとどう変わったか」を分析します。</p>
+    <div><a class="btn" href="{% url 'hanken:record' %}">半券をつくる</a></div>
+  </div>
+{% else %}
+  <div class="panel">
+    <div class="panel-head"><h2>観る前、どんな気持ちでしたか？</h2><span class="eyebrow">Before</span></div>
+    <div class="chips">
+      {% for c in counts %}
+      <a class="chip{% if c.key == sel %} on{% endif %}" style="--c:var(--e-{{ c.key }})" href="?emo={{ c.key }}"{% if c.key == sel %} aria-current="true"{% endif %}><span><i></i>{{ c.name }} <span class="mono small muted">{{ c.n }}</span></span></a>
+      {% endfor %}
+    </div>
+    <p class="small muted">共有された {{ total }} 枚の半券から集計しています。</p>
+  </div>
+
+  <h2>〈<span style="color:var(--e-{{ sel }})">{{ sel_name }}</span>〉で観始めた人は、観たあと…</h2>
+  <div class="stats">
+    <div class="stat"><div class="v mono">{{ stats.n }}</div><div class="k">半券</div></div>
+    <div class="stat"><div class="v mono tone-{{ stats.avg|trend }}">{{ stats.avg|signed:1 }}</div><div class="k">気分の平均変化</div></div>
+    <div class="stat"><div class="v mono">{{ stats.up_pct }}<span class="small">%</span></div><div class="k">気分が上がった人</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-head"><h3>観た後の気持ち</h3><span class="eyebrow">After</span></div>
+      <div class="bars">
+        {% for d in dist %}
+        <div class="bar" style="--c:var(--e-{{ d.key }})"><span>{{ d.name }}</span><span class="track"><span class="fill" style="width:{{ d.pct|floatformat:0 }}%"></span></span><span class="n mono">{{ d.n }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>気持ちが動いた作品</h3><span class="eyebrow">Works</span></div>
+      <div class="rank">
+        {% for w in works %}
+        <div class="rank-row"><span class="i mono">{{ forloop.counter }}</span>
+          <span class="w">{{ w.title }} <span class="kind">{{ w.kind|kind_name }}</span><br><span class="small muted">{{ w.n }}人の平均</span></span>
+          <span class="d mono {{ w.avg|trend }}">{{ w.avg|signed:1 }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <h2>最近の半券</h2>
+  {% for e in recent %}{% include "hanken/_stub.html" with own=False %}{% endfor %}
+{% endif %}
+{% endblock %}

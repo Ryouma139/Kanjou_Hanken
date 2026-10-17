@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load hanken_tags %}
+{% block title %}ふり返り｜感情の半券{% endblock %}
+{% block content %}
+<div class="reflect">
+  <span class="eyebrow">Reflection</span>
+  <h2>『{{ entry.title }}』を観て</h2>
+  <div class="shift">
+    <span class="emo-tag" style="--c:var(--e-{{ entry.before_emo }})"><i></i>{{ entry.before_emo|emo_name }}</span>
+    <span class="muted">→</span>
+    <span class="emo-tag" style="--c:var(--e-{{ entry.after_emo }})"><i></i>{{ entry.after_emo|emo_name }}</span>
+  </div>
+  <p>気分 <span class="mono">{{ entry.before_mood }}</span> → <span class="mono">{{ entry.after_mood }}</span>　<span class="big mono tone-{{ entry.delta|trend }}">{{ entry.delta|signed }}</span></p>
+  <p>{{ care }}</p>
+  <div class="actions">
+    <a class="btn" href="{% url 'hanken:record' %}">続けて記録する</a>
+    <a class="btn ghost" href="{% url 'hanken:mine' %}">わたしの半券を見る</a>
+    <a class="btn ghost" href="{% url 'hanken:share' %}?emo={{ entry.before_emo }}">同じ気持ちだった人を見る</a>
+  </div>
+</div>
+{% include "hanken/_stub.html" with e=entry own=True %}
+{% endblock %}

@@ -1,0 +1,18 @@
+{% load hanken_tags %}
+<div class="half">
+  <span class="lbl">{{ lbl }}</span>
+  {% if emo %}
+    {% if photo %}
+      <div class="tile" style="--c:var(--e-{{ emo }})"><img src="{{ photo.url }}" alt="{{ lbl }}の写真" loading="lazy"></div>
+    {% else %}
+      <div class="tile emo" style="--c:var(--e-{{ emo }})"><b>{{ emo|emo_char }}</b></div>
+    {% endif %}
+    <div class="meta">
+      <span class="emo-tag" style="--c:var(--e-{{ emo }})"><i></i>{{ emo|emo_name }}</span>
+      <span class="score mono">{{ mood }}<span class="muted small">/10</span></span>
+    </div>
+    {% if note %}<p class="note">{{ note }}</p>{% endif %}
+  {% else %}
+    <div class="tile empty">まだ</div>
+  {% endif %}
+</div>

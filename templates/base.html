@@ -1,0 +1,47 @@
+{% load static %}<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>{% block title %}感情の半券{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="{% static 'hanken/style.css' %}">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="top-row">
+      <span class="eyebrow">Before / After of a story</span>
+      {% if user.is_authenticated %}
+      <form class="userbar" method="post" action="{% url 'logout' %}">{% csrf_token %}
+        <span class="small muted">{{ user.get_username }} さん</span>
+        <button class="btn link" type="submit">ログアウト</button>
+      </form>
+      {% endif %}
+    </div>
+    <h1><a href="{% url 'hanken:record' %}">感情の半券</a></h1>
+    <p>本や映画、ドラマに触れる前と後で、気持ちはどう動いた？ 一枚の半券に、作品名と気持ちと写真を残しましょう。</p>
+  </header>
+
+  {% if user.is_authenticated %}
+  <nav class="tabs" aria-label="画面の切り替え">
+    <a href="{% url 'hanken:record' %}"{% if tab == 'record' %} aria-current="page"{% endif %}>記録する</a>
+    <a href="{% url 'hanken:mine' %}"{% if tab == 'mine' %} aria-current="page"{% endif %}>わたしの半券</a>
+    <a href="{% url 'hanken:share' %}"{% if tab == 'share' %} aria-current="page"{% endif %}>みんなの変化</a>
+  </nav>
+  {% endif %}
+
+  {% if messages %}
+  <div class="messages" role="status">
+    {% for m in messages %}<p class="msg {{ m.tags }}">{{ m }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  <main class="list">{% block content %}{% endblock %}</main>
+
+  <p class="care">気持ちの記録は心の整理に役立ちますが、つらさが長く続くときは一人で抱えないでください。身近な人や、<a href="https://www.mhlw.go.jp/mamorouyokokoro/soudan/tel" target="_blank" rel="noopener">厚生労働省「まもろうよ こころ」の電話相談窓口</a>に相談できます。</p>
+</div>
+<script src="{% static 'hanken/app.js' %}"></script>
+</body>
+</html>

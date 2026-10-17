@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}ログイン｜感情の半券{% endblock %}
+{% block content %}
+<form method="post" class="panel auth" novalidate>
+  {% csrf_token %}
+  <div class="panel-head"><h2>ログイン</h2><span class="eyebrow">Sign in</span></div>
+  {% if form.errors %}<p class="status err">ニックネームかパスワードが違います。もう一度入力してください。</p>{% endif %}
+  <label class="field" for="{{ form.username.id_for_label }}">ニックネーム{{ form.username }}</label>
+  <label class="field" for="{{ form.password.id_for_label }}">パスワード{{ form.password }}</label>
+  <input type="hidden" name="next" value="{{ next }}">
+  <div class="actions"><button class="btn" type="submit">ログイン</button>
+    <a class="btn link" href="{% url 'signup' %}">はじめての方はこちら</a></div>
+</form>
+{% endblock %}

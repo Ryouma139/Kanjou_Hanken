@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load hanken_tags %}
+{% block title %}わたしの半券｜感情の半券{% endblock %}
+{% block content %}
+{% if not entries %}
+  <div class="empty-state">
+    <h3>まだ半券がありません</h3>
+    <p>「記録する」で作品名と観る前の気持ちを残すと、ここに半券が並びます。観終わったら、右半分に観た後の気持ちを書き足します。</p>
+    <div><a class="btn" href="{% url 'hanken:record' %}">最初の半券をつくる</a></div>
+  </div>
+{% else %}
+  {% if done %}
+  <div class="stats">
+    <div class="stat"><div class="v mono">{{ entries|length }}</div><div class="k">半券の数</div></div>
+    <div class="stat"><div class="v mono tone-{{ stats.avg|trend }}">{{ stats.avg|signed:1 }}</div><div class="k">気分の平均変化</div></div>
+    <div class="stat"><div class="v mono">{{ stats.up_pct }}<span class="small">%</span></div><div class="k">気分が上がった割合</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-head"><h3>気分の動き</h3><span class="eyebrow">最近{{ chart.lines|length }}件</span></div>
+      <svg class="chart" viewBox="0 0 {{ chart.w }} {{ chart.h }}" role="img" aria-label="観る前と観た後の気分の変化">
+        {% for t in chart.ticks %}
+          <line x1="{{ chart.x1 }}" x2="{{ chart.x2 }}" y1="{{ t.y }}" y2="{{ t.y }}" stroke="var(--line)" stroke-width="1"/>
+          <text x="{{ chart.tick_x }}" y="{{ t.y }}" dy="4" text-anchor="end" font-size="11" fill="var(--muted)" class="mono">{{ t.m }}</text>
+        {% endfor %}
+        <text x="{{ chart.x1 }}" y="{{ chart.label_y }}" text-anchor="middle" font-size="12" fill="var(--muted)">観る前</text>
+        <text x="{{ chart.x2 }}" y="{{ chart.label_y }}" text-anchor="middle" font-size="12" fill="var(--muted)">観た後</text>
+        {% for l in chart.lines %}
+        <g>
+          <title>{{ l.title }}：{{ l.b }}→{{ l.a }}</title>
+          <line x1="{{ chart.x1 }}" y1="{{ l.yb }}" x2="{{ chart.x2 }}" y2="{{ l.ya }}" class="slope {{ l.dir }}" stroke-width="2"/>
+          <circle cx="{{ chart.x1 }}" cy="{{ l.yb }}" r="5" fill="var(--e-{{ l.b_emo }})" stroke="var(--card)" stroke-width="1.5"/>
+          <circle cx="{{ chart.x2 }}" cy="{{ l.ya }}" r="5" fill="var(--e-{{ l.a_emo }})" stroke="var(--card)" stroke-width="1.5"/>
+        </g>
+        {% endfor %}
+      </svg>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>心のお守り作品</h3><span class="eyebrow">Comfort</span></div>
+      {% if comfort %}
+      <div class="rank">
+        {% for e in comfort %}
+        <div class="rank-row"><span class="i mono">{{ forloop.counter }}</span>
+          <span class="w">{{ e.title }} <span class="kind">{{ e.kind|kind_name }}</span><br><span class="small muted">{{ e.before_emo|emo_name }} → {{ e.after_emo|emo_name }}</span></span>
+          <span class="d mono">{{ e.delta|signed }}</span></div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="small muted">気分が上がった作品がここに並びます。落ち込んだ日に見返してみてください。</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if open %}
+    <h2>鑑賞中</h2>
+    {% for e in open %}{% include "hanken/_stub.html" with own=True manage=True %}{% endfor %}
+  {% endif %}
+  {% if done %}
+    <h2>見終わった半券</h2>
+    {% for e in done %}{% include "hanken/_stub.html" with own=True manage=True %}{% endfor %}
+  {% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,11 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.extraPaths": ["${workspaceFolder}"],
+  "editor.gotoLocation.multiple": "goto",
+  "editor.linkedEditing": true,
+  "files.associations": {
+    "**/templates/**/*.html": "html"
+  }
+}

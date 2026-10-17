@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load hanken_tags %}
+{% block title %}観た後を記録｜感情の半券{% endblock %}
+{% block content %}
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  <div class="before-summary">
+    <span class="kind">{{ entry.kind|kind_name }}</span>
+    <div class="minw0">
+      <h3>{{ entry.title }}</h3>
+      <span class="small muted">観る前：<b style="color:var(--e-{{ entry.before_emo }})">{{ entry.before_emo|emo_name }}</b>・気分 <span class="mono">{{ entry.before_mood }}</span>（{{ entry.before_at|date:"Y.n.j" }}）</span>
+    </div>
+  </div>
+
+  <div class="panel">{% include "hanken/_phase.html" with ph=form.after_phase %}</div>
+
+  <div class="actions">
+    <button class="btn" type="submit">観た後を記録する</button>
+    <a class="btn ghost" href="{% url 'hanken:mine' %}">やめる</a>
+    {% if form.errors %}<span class="status err">入力内容を確認してください。</span>{% endif %}
+  </div>
+</form>
+{% endblock %}

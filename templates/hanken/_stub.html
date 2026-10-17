@@ -1,0 +1,41 @@
+{% load hanken_tags %}
+<article class="stub" id="e{{ e.pk }}">
+  <div class="stub-head">
+    <div class="t"><span class="kind">{{ e.kind|kind_name }}</span><h3>{{ e.title }}</h3></div>
+    <span class="small muted mono">{{ e.created_at|date:"Y.n.j" }}</span>
+  </div>
+  {% include "hanken/_half.html" with lbl="BEFORE" emo=e.before_emo mood=e.before_mood note=e.before_note photo=e.before_photo %}
+  <div class="perf"><span class="delta mono {{ e.delta|trend }}">{% if e.is_done %}{{ e.delta|signed }}{% else %}鑑賞中{% endif %}</span></div>
+  {% include "hanken/_half.html" with lbl="AFTER" emo=e.after_emo mood=e.after_mood note=e.after_note photo=e.after_photo %}
+
+  <div class="stub-foot">
+    {% if own %}
+      {% if e.is_done %}<span class="muted">{{ e.author }}</span>
+      {% else %}<a class="btn sm" href="{% url 'hanken:after' e.pk %}">観た後を記録する</a>{% endif %}
+      {% if manage %}
+      <span class="actions">
+        <form method="post" action="{% url 'hanken:change_share' e.pk %}" class="inline">{% csrf_token %}
+          <label class="small muted" for="sh-{{ e.pk }}">共有</label>
+          <select name="share" id="sh-{{ e.pk }}" data-autosubmit>
+            <option value="public"{% if e.share == 'public' %} selected{% endif %}>名前つき</option>
+            <option value="anon"{% if e.share == 'anon' %} selected{% endif %}>匿名</option>
+            <option value="private"{% if e.share == 'private' %} selected{% endif %}>自分だけ</option>
+          </select>
+          <noscript><button class="btn link" type="submit">変更</button></noscript>
+        </form>
+        {% if confirm == e.pk|stringformat:"d" %}
+          <form method="post" action="{% url 'hanken:delete' e.pk %}" class="inline">{% csrf_token %}
+            <span class="small">この半券を削除しますか？</span>
+            <button class="btn danger" type="submit">削除する</button>
+            <a class="btn link" href="{% url 'hanken:mine' %}#e{{ e.pk }}">やめる</a>
+          </form>
+        {% else %}
+          <a class="btn link" href="?confirm={{ e.pk }}#e{{ e.pk }}">削除</a>
+        {% endif %}
+      </span>
+      {% endif %}
+    {% else %}
+      <span class="muted">{{ e.author }}</span>
+    {% endif %}
+  </div>
+</article>

@@ -1,0 +1,27 @@
+{% load hanken_tags %}
+<div class="panel-head"><h2>{{ ph.title }}</h2><span class="eyebrow">{{ ph.eyebrow }}</span></div>
+<div class="chips" role="radiogroup" aria-label="{{ ph.title }}">
+  {% for radio in ph.emo %}
+  <label class="chip" style="--c:var(--e-{{ radio.data.value }})">{{ radio.tag }}<span><i></i>{{ radio.choice_label }}</span></label>
+  {% endfor %}
+</div>
+{{ ph.emo.errors }}
+<div>
+  <div class="mood">
+    <label class="small" for="{{ ph.mood.id_for_label }}">気分</label>
+    {{ ph.mood }}
+    <output class="mono" data-mood-out="{{ ph.mood.id_for_label }}">{{ ph.mood.value|default:5 }} / 10</output>
+  </div>
+  <div class="mood-hint"><span>1 とてもつらい</span><span data-mood-word="{{ ph.mood.id_for_label }}">{{ ph.mood.value|default:5|mood_word }}</span><span>10 最高</span></div>
+  {{ ph.mood.errors }}
+</div>
+<div class="photo-row">
+  <div class="photo-prev" data-preview-for="{{ ph.photo.id_for_label }}"></div>
+  <div class="photo-side">
+    <label class="filebtn">{{ ph.photo }}写真を選ぶ</label>
+    <span class="small muted">そのときの景色や表情、気持ちに近いイメージを一枚。なくても大丈夫です。</span>
+    {{ ph.photo.errors }}
+  </div>
+</div>
+<label class="field" for="{{ ph.note.id_for_label }}">ひとこと{{ ph.note }}</label>
+{{ ph.note.errors }}

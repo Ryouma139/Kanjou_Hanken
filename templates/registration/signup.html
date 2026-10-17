@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}はじめる｜感情の半券{% endblock %}
+{% block content %}
+<form method="post" class="panel auth" novalidate>
+  {% csrf_token %}
+  <div class="panel-head"><h2>はじめる</h2><span class="eyebrow">Sign up</span></div>
+  <p class="small muted">ニックネームは「名前つきで共有」した半券に表示されます。本名でなくて大丈夫です。</p>
+  {% for f in form %}
+    <label class="field" for="{{ f.id_for_label }}">{{ f.label }}{{ f }}</label>
+    {{ f.errors }}
+    {% if f.help_text %}<div class="help small muted">{{ f.help_text|safe }}</div>{% endif %}
+  {% endfor %}
+  <div class="actions"><button class="btn" type="submit">登録してはじめる</button>
+    <a class="btn link" href="{% url 'login' %}">ログインはこちら</a></div>
+</form>
+{% endblock %}

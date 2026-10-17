@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}記録する｜感情の半券{% endblock %}
+{% block content %}
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+
+  <div class="panel">
+    <div class="panel-head"><h2>作品</h2><span class="eyebrow">Work</span></div>
+    <div class="segs" role="radiogroup" aria-label="種類">
+      {% for radio in form.kind %}<label class="seg">{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}
+    </div>
+    <label class="field" for="{{ form.title.id_for_label }}">作品名{{ form.title }}</label>
+    {{ form.title.errors }}
+  </div>
+
+  <div class="panel">{% include "hanken/_phase.html" with ph=form.before_phase %}</div>
+
+  <label class="check">{{ form.both }} {{ form.both.label }}</label>
+
+  <div class="panel" id="after-panel" {% if not form.both.value %}hidden{% endif %}>
+    {% include "hanken/_phase.html" with ph=form.after_phase %}
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>共有のしかた</h3><span class="eyebrow">Share</span></div>
+    <div class="segs" role="radiogroup" aria-label="共有">
+      {% for radio in form.share %}<label class="seg">{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}
+    </div>
+    <p class="small muted">共有すると「みんなの変化」で、同じ気持ちだった人の分析に使われます。写真やひとことも表示されます。</p>
+  </div>
+
+  <div class="actions">
+    <button class="btn" type="submit" id="submit-btn" data-label-one="観る前を記録する" data-label-both="前と後を記録する">{% if form.both.value %}前と後を記録する{% else %}観る前を記録する{% endif %}</button>
+    {% if form.errors %}<span class="status err">入力内容を確認してください。</span>{% endif %}
+  </div>
+</form>
+{% endblock %}
