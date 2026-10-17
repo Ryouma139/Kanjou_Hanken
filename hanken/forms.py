@@ -8,18 +8,18 @@ from django.utils import timezone
 from PIL import Image, ImageOps
 
 from .emotions import EMOTION_CHOICES, KIND_CHOICES, SHARE_CHOICES
-from .models import Entry
+from .models import Entry, Work
 
 
 class RangeInput(forms.NumberInput):
     input_type = "range"
 
 
-def shrink_photo(upload):
+def shrink_photo(upload, side=None):
     """向きを補正し、長辺を縮めたJPEGにする。"""
     if not upload:
         return None
-    side = getattr(settings, "HANKEN_PHOTO_MAX_SIDE", 1280)
+    side = side or getattr(settings, "HANKEN_PHOTO_MAX_SIDE", 1280)
     img = Image.open(upload)
     img = ImageOps.exif_transpose(img).convert("RGB")
     img.thumbnail((side, side))
@@ -122,6 +122,7 @@ class RecordForm(PhotoSizeMixin, PhaseMixin, forms.Form):
         entry = Entry(user=user, kind=d["kind"], title=d["title"].strip(), share=d["share"],
                       before_emo=d["before_emo"], before_mood=d["before_mood"],
                       before_note=d.get("before_note", ""), before_at=now)
+        entry.work = Work.match(entry.kind, entry.title)
         if d.get("before_photo"):
             entry.before_photo.save("photo.jpg", shrink_photo(d["before_photo"]), save=False)
         if d.get("both"):

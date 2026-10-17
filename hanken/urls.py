@@ -9,6 +9,7 @@ urlpatterns = [
     path("mine/", views.mine, name="mine"),
     path("share/", views.share, name="share"),
     path("calendar/", views.calendar, name="calendar"),
+    path("recent/", views.recent, name="recent"),
     path("entry/<int:pk>/after/", views.add_after, name="after"),
     path("entry/<int:pk>/reflect/", views.reflect, name="reflect"),
     path("entry/<int:pk>/share/", views.change_share, name="change_share"),

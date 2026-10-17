@@ -14,6 +14,7 @@ base.html（外枠：全画面共通）
  ├─ hanken/reflect.html  ふり返り          ─include→ _stub.html → _half.html ×2
  ├─ hanken/mine.html     わたしの半券       ─include→ _stub.html → _half.html ×2（半券の数だけ）
  ├─ hanken/share.html    みんなの変化       ─include→ _stub.html → _half.html ×2（最大6枚）
+ ├─ hanken/recent.html   最近の作品（ログイン直後に表示）
  ├─ hanken/calendar.html カレンダー         ─include→ _stub.html → _half.html ×2（選んだ日の分）
  ├─ registration/login.html   ログイン
  └─ registration/signup.html  ユーザー登録
@@ -36,6 +37,7 @@ base.html（外枠：全画面共通）
 | `hanken/reflect.html` | `/entry/<id>/reflect/` | `reflect` | `entry`、`care` | 記録する |
 | `hanken/mine.html` | `/mine/` | `mine` | `entries` `open` `done` `stats` `comfort` `chart` `confirm` | わたしの半券 |
 | `hanken/share.html` | `/share/?emo=...` | `share` | `total` `counts` `sel` `sel_name` `stats` `dist` `works` `recent` | みんなの変化 |
+| `hanken/recent.html` | `/recent/` | `recent` | `sections` | 最近の作品 |
 | `hanken/calendar.html` | `/calendar/?m=...&d=...` | `calendar` | `year` `month` `prev` `next` `weekdays` `cal` `picked` `day_entries` | カレンダー |
 | `registration/login.html` | `/accounts/login/` | Django標準 `LoginView` | `form`、`next` | （なし） |
 | `registration/signup.html` | `/accounts/signup/` | `signup` | `form`（SignupForm） | （なし） |
@@ -60,7 +62,7 @@ base.html（外枠：全画面共通）
 | `<head>` | 文字コード、スマホ対応（viewport）、Google Fonts、`style.css` |
 | ヘッダー | 「Before / After of a story」、アプリ名（記録画面へのリンク）、説明文 |
 | ユーザー欄 | ログイン中のみ：「○○ さん」と**ログアウトボタン**（POST で `logout` に送る） |
-| タブ | ログイン中のみ：記録する／わたしの半券／みんなの変化。view から渡された `tab` と一致するタブに `aria-current="page"` を付けて強調 |
+| タブ | ログイン中のみ：記録する／わたしの半券／みんなの変化／カレンダー／最近の作品。view から渡された `tab` と一致するタブに `aria-current="page"` を付けて強調。**管理者（`user.is_staff`）のときだけ**、最後に「管理画面」（`/admin/` へ移動）も出る |
 | メッセージ | `messages.success(...)` で view が出した通知（「記録しました」など） |
 | `<main>` | `{% block content %}`：**各画面の中身が入る場所** |
 | ケアの文 | つらさが続くときの相談先（厚生労働省「まもろうよ こころ」へのリンク） |
@@ -186,6 +188,27 @@ base.html（外枠：全画面共通）
 - 横棒の長さは `style="width:{{ d.pct|floatformat:0 }}%"`（割合を整数にして CSS の幅に使う）
 - `own=False` なので、半券の下には投稿者名（「匿名さん」など）だけが出る
 
+### hanken/recent.html（最近の作品）
+ログイン・登録の直後に出る画面です。管理画面で登録した作品を、**映画・本・ドラマごとに更新日時の新しい順で10件ずつ**並べます。
+
+```
+ ├ 見出し        最近の作品、「記録をはじめる」ボタン（記録する画面へ）
+ ├ 映画          カードが横に10枚並ぶ（はみ出したら横スクロール）
+ │                 カード：画像（縦長 2:3）＋左上に順位、作品名（リンクがあれば ↗）、ひとこと紹介、更新日
+ ├ 本            同じ
+ └ ドラマ        同じ（0件なら「まだ登録されていません」。管理者には追加リンク）
+```
+
+ポイント：
+- 時間で別の画面へ移動することはない。ゆっくり一覧を見てから「記録をはじめる」かタブで移動する
+- リンクがある作品は**カード全体**が `<a>`、ない作品は `<div>`（`{% if w.url %}<a …>{% else %}<div …>{% endif %}` で開始と終了のタグを切り替える）
+- 画像は `<img src="{{ w.cover_url }}">`。`cover_url` はアップロードした画像を優先し、なければ画像URL（models.py のプロパティ）
+- `referrerpolicy="no-referrer"`：ほかのサイトの画像を読み込むとき、どのページから来たかを相手に伝えない。伝えると表示を断るサイトもあるため
+- 画像がない（または読み込めない）作品は、種類ごとの色のタイルに「映画」「本」「ドラマ」の文字（色は style.css の `.cover.kind-movie` など）
+- 画像は `object-fit:cover` で 2:3 の枠に合わせて切り取る。作品名と紹介は2行を超えると「…」で省略
+- 作品の追加リンク `{% url 'admin:hanken_work_add' %}` は、管理画面の「作品を追加」ページの名前
+- 作品のリンクは `target="_blank"` で別のタブに開く。`rel="noopener noreferrer"` は、開いた先のページからこの画面を操作されないようにするための安全策
+
 ### hanken/calendar.html（カレンダー）
 自分の半券を、月のカレンダーで数える画面です。**観る前と観た後がそろった半券を1枚**として、観終わった日（観た後を記録した日）に数えます。鑑賞中の半券は数えません。
 
@@ -263,7 +286,7 @@ Django 標準の `LoginView` が、この決まった名前のファイルを使
 構造：
 ```
 <article class="stub" id="e{{ e.pk }}">     ← id はページ内リンク（#e12）用
- ├ 頭     種類、作品名、作成日
+ ├ 頭     （作品に結びついていれば）作品の小さな画像、種類、作品名（作品にリンクがあればリンク ↗）、作成日
  ├ 左     include _half.html  lbl="BEFORE"  before_ の項目
  ├ 中央   切り取り線：変化量（+3 など）。未記録なら「鑑賞中」
  ├ 右     include _half.html  lbl="AFTER"   after_ の項目
@@ -275,6 +298,7 @@ Django 標準の `LoginView` が、この決まった名前のファイルを使
 ```
 
 ポイント：
+- **作品との結びつき**：`e.work` は半券に結びついた作品（なければ空）。`{% if e.work.cover_url %}` のように、`e.work` が空でもエラーにならず「なし」として扱われる
 - **削除は2段階**：「削除」リンクで `?confirm=id` 付きで開き直す → 「この半券を削除しますか？」と「削除する」ボタンが出る → POST で削除。JavaScript を使わずに確認を出している
 - `e.pk|stringformat:"d"`：数値の id を文字列にして、URL から来た `confirm`（文字列）と比べる
 - `<noscript>`：JavaScript が無効なときだけ「変更」ボタンを出す

@@ -30,6 +30,8 @@
     <a href="{% url 'hanken:mine' %}"{% if tab == 'mine' %} aria-current="page"{% endif %}>わたしの半券</a>
     <a href="{% url 'hanken:share' %}"{% if tab == 'share' %} aria-current="page"{% endif %}>みんなの変化</a>
     <a href="{% url 'hanken:calendar' %}"{% if tab == 'calendar' %} aria-current="page"{% endif %}>カレンダー</a>
+    <a href="{% url 'hanken:recent' %}"{% if tab == 'recent' %} aria-current="page"{% endif %}>最近の作品</a>
+    {% if user.is_staff %}<a href="{% url 'admin:index' %}">管理画面</a>{% endif %}
   </nav>
   {% endif %}
 

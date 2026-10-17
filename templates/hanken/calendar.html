@@ -17,7 +17,7 @@
         <td class="{% if not c.in_month %}out{% endif %}{% if c.today %} today{% endif %}{% if c.in_month and c.day == picked.day %} on{% endif %}">
           {% if c.n %}
           <a class="day has" href="?m={{ ym }}&amp;d={{ c.day }}#day" aria-label="{{ month }}月{{ c.day }}日 半券{{ c.n }}枚">
-            <span class="dn">{{ c.day }}</span><span class="cnt mono">{{ c.n }}</span>
+            <span class="dn">{{ c.day }}</span>
           </a>
           {% else %}
           <div class="day"><span class="dn">{{ c.day }}</span></div>
@@ -30,7 +30,7 @@
   </table>
 
   <div class="cal-foot">
-    <span class="small muted">観る前と観た後がそろった半券を1枚として、観終わった日に数えています。</span>
+    <span class="small muted">色のついた日を押すと、その日に観終わった半券が表示されます（観る前と観た後がそろって1枚）。</span>
     {% if not is_this_month %}<a class="btn link" href="?">今月へ</a>{% endif %}
   </div>
 </div>

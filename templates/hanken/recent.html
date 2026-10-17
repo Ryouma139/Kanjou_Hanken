@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}最近の作品｜感情の半券{% endblock %}
+{% block content %}
+<div class="recent-head">
+  <div>
+    <span class="eyebrow">Recent works</span>
+    <h2>最近の作品</h2>
+  </div>
+  <a class="btn sm" href="{% url 'hanken:record' %}">記録をはじめる</a>
+</div>
+
+{% for s in sections %}
+<section class="panel">
+  <div class="panel-head"><h3>{{ s.name }}</h3><span class="eyebrow">{{ s.kind }}</span></div>
+  {% if s.works %}
+  <ol class="works">
+    {% for w in s.works %}
+    <li class="work">
+      {% if w.url %}<a class="work-in" href="{{ w.url }}" target="_blank" rel="noopener noreferrer">{% else %}<div class="work-in">{% endif %}
+        <div class="cover kind-{{ s.kind }}">
+          {% if w.cover_url %}<img src="{{ w.cover_url }}" alt="" loading="lazy" referrerpolicy="no-referrer">{% else %}<b>{{ s.name }}</b>{% endif %}
+          <span class="no mono">{{ forloop.counter }}</span>
+        </div>
+        <span class="work-title">{{ w.title }}{% if w.url %}<span class="ext" aria-label="（別のタブで開く）">↗</span>{% endif %}</span>
+        {% if w.note %}<span class="small muted work-note">{{ w.note }}</span>{% endif %}
+        <span class="small muted mono">{{ w.updated_at|date:"Y.n.j" }}</span>
+      {% if w.url %}</a>{% else %}</div>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p class="small muted">まだ登録されていません。{% if user.is_staff %}<a href="{% url 'admin:hanken_work_add' %}">管理画面で追加する</a>{% endif %}</p>
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}

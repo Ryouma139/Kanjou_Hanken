@@ -13,7 +13,51 @@ def photo_path(instance, filename):
     return f"photos/{timezone.now():%Y/%m}/{uuid.uuid4().hex}.jpg"
 
 
+def work_image_path(instance, filename):
+    return f"works/{instance.kind}/{uuid.uuid4().hex}.jpg"
+
+
 MOOD = [MinValueValidator(1), MaxValueValidator(10)]
+
+
+class Work(models.Model):
+    """管理画面で登録する作品。「最近の作品」に更新日時の新しい順で並ぶ。"""
+
+    kind = models.CharField("種類", max_length=10, choices=KIND_CHOICES)
+    title = models.CharField("作品名", max_length=80)
+    note = models.CharField("ひとこと紹介", max_length=120, blank=True)
+    url = models.URLField("リンク", blank=True,
+                          help_text="公式サイト、配信ページ、書籍の販売ページなど。空なら作品名はリンクになりません。")
+    image = models.ImageField("画像", upload_to=work_image_path, blank=True,
+                              help_text="表紙やポスターなど。縦長（2:3）がきれいに収まります。保存時に長辺800pxへ縮小します。")
+    image_url = models.URLField("画像URL", max_length=500, blank=True,
+                                help_text="ほかのサイトの画像アドレス。上の「画像」をアップロードしている場合は、そちらが優先されます。")
+    created_at = models.DateTimeField("登録日時", auto_now_add=True)
+    updated_at = models.DateTimeField("更新日時", auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        verbose_name = "作品"
+        verbose_name_plural = "作品"
+        constraints = [models.UniqueConstraint(fields=["kind", "title"], name="unique_work_kind_title")]
+        indexes = [models.Index(fields=["kind", "-updated_at"])]
+
+    def __str__(self):
+        return f"{self.title}（{self.get_kind_display()}）"
+
+    @property
+    def cover_url(self):
+        """表示する画像のURL。アップロードした画像を優先し、なければ画像URL。どちらもなければ空。"""
+        return self.image.url if self.image else self.image_url
+
+    @classmethod
+    def match(cls, kind, title):
+        """作品名が一致する作品（前後の空白・英字の大小は無視）。同じ種類を優先し、なければ種類違いでも同名のもの。"""
+        title = (title or "").strip()
+        if not title:
+            return None
+        same = cls.objects.filter(title__iexact=title)
+        return same.filter(kind=kind).first() or same.first()
 
 
 class Entry(models.Model):
@@ -21,6 +65,8 @@ class Entry(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                              related_name="entries", verbose_name="記録した人")
+    work = models.ForeignKey(Work, on_delete=models.SET_NULL, null=True, blank=True,
+                             related_name="entries", verbose_name="作品")
     kind = models.CharField("種類", max_length=10, choices=KIND_CHOICES, default="book")
     title = models.CharField("作品名", max_length=80)
     share = models.CharField("共有", max_length=10, choices=SHARE_CHOICES, default="public")

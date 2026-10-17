@@ -1,7 +1,11 @@
 {% load hanken_tags %}
 <article class="stub" id="e{{ e.pk }}">
   <div class="stub-head">
-    <div class="t"><span class="kind">{{ e.kind|kind_name }}</span><h3>{{ e.title }}</h3></div>
+    <div class="t">
+      {% if e.work.cover_url %}<span class="stub-cover"><img src="{{ e.work.cover_url }}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>{% endif %}
+      <span class="kind">{{ e.kind|kind_name }}</span>
+      <h3>{% if e.work.url %}<a href="{{ e.work.url }}" target="_blank" rel="noopener noreferrer">{{ e.title }}<span class="ext" aria-label="（別のタブで開く）">↗</span></a>{% else %}{{ e.title }}{% endif %}</h3>
+    </div>
     <span class="small muted mono">{{ e.created_at|date:"Y.n.j" }}</span>
   </div>
   {% include "hanken/_half.html" with lbl="BEFORE" emo=e.before_emo mood=e.before_mood note=e.before_note photo=e.before_photo %}

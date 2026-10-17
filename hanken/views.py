@@ -9,9 +9,12 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from . import analysis
-from .emotions import EMOTION_NAME
+from .emotions import EMOTION_NAME, KIND_NAME
 from .forms import AfterForm, RecordForm, ShareForm, SignupForm
-from .models import Entry
+from .models import Entry, Work
+
+RECENT_KINDS = ["movie", "book", "drama"]
+RECENT_LIMIT = 10
 
 
 def author_label(entry, viewer):
@@ -68,7 +71,7 @@ def reflect(request, pk):
 
 @login_required
 def mine(request):
-    entries = list(request.user.entries.all())
+    entries = list(request.user.entries.select_related("work"))
     for e in entries:
         e.author = own_label(e)
     done = [e for e in entries if e.is_done]
@@ -82,6 +85,14 @@ def mine(request):
         "chart": analysis.slope_chart(done),
         "confirm": request.GET.get("confirm", ""),
     })
+
+
+@login_required
+def recent(request):
+    sections = [{"kind": k, "name": KIND_NAME[k],
+                 "works": Work.objects.filter(kind=k).order_by("-updated_at")[:RECENT_LIMIT]}
+                for k in RECENT_KINDS]
+    return render(request, "hanken/recent.html", {"tab": "recent", "sections": sections})
 
 
 def shift_month(year, month, step):
@@ -98,7 +109,8 @@ def calendar(request):
     except ValueError:
         year, month = today.year, today.month
 
-    entries = list(request.user.entries.exclude(after_emo="").filter(after_mood__isnull=False))
+    entries = list(request.user.entries.exclude(after_emo="").filter(after_mood__isnull=False)
+                   .select_related("work"))
     ctx = {
         "tab": "calendar",
         "year": year, "month": month, "ym": f"{year}-{month:02d}",
@@ -148,7 +160,7 @@ def delete_entry(request, pk):
 def share(request):
     pool = list(
         Entry.objects.exclude(share="private").exclude(after_emo="")
-        .filter(after_mood__isnull=False).select_related("user")
+        .filter(after_mood__isnull=False).select_related("user", "work")
     )
     ctx = {"tab": "share", "total": len(pool)}
     if not pool:
@@ -186,7 +198,7 @@ def signup(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect("hanken:record")
+            return redirect("hanken:recent")
     else:
         form = SignupForm()
     return render(request, "registration/signup.html", {"form": form})

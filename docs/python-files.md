@@ -62,6 +62,7 @@ hanken/views.py（画面の処理）
 | `MEDIA_*` | 写真の保存先（`media/`） |
 | `LOGIN_URL` など | ログイン画面・ログイン後・ログアウト後の移動先 |
 | `HANKEN_PHOTO_MAX_BYTES` / `HANKEN_PHOTO_MAX_SIDE` | このアプリ独自の設定：写真は1枚10MBまで、保存時は長辺1280px |
+| `HANKEN_WORK_IMAGE_MAX_SIDE` | 「最近の作品」の画像は長辺800px |
 
 ### config/urls.py
 URL の入口の表です。
@@ -102,14 +103,32 @@ URL の入口の表です。
 
 `EMOTIONS` を1つ書けば、`EMOTION_CHOICES`・`EMOTION_NAME`・`EMOTION_CHAR` が自動で作られます。定義を1か所にまとめているので、気持ちを増やすときもここに1行足すだけで済みます（色は `style.css` に追加が必要）。
 
-### models.py：半券のデータ
-DB の `hanken_entry` テーブルになる `Entry`（半券1枚）を定義しています。
+### models.py：半券と作品のデータ
+DB の `hanken_entry` テーブルになる `Entry`（半券1枚）と、`hanken_work` テーブルになる `Work`（管理画面で登録する作品）を定義しています。
+
+**Work（作品）**
+
+| 項目 | 内容 |
+|---|---|
+| `kind` / `title` | 種類（本・映画・ドラマ）、作品名。同じ種類で同じ作品名は登録できない |
+| `note` | ひとこと紹介（なくてもよい） |
+| `url` | リンク（公式サイト・配信ページ・販売ページなど。なくてもよい）。`http://` `https://` などの正しいURLだけ保存できる |
+| `image` | 画像（表紙・ポスターなど。なくてもよい）。DB には `works/種類/ランダム32文字.jpg` というパスだけが入り、ファイルは `media/works/` に保存される（`work_image_path()` で決める） |
+| `image_url` | 画像URL（ほかのサイトの画像アドレス。なくてもよい）。500文字まで。正しいURLだけ保存できる |
+| `cover_url` | プロパティ。**表示する画像のURL**：アップロードした `image` があればそれ、なければ `image_url`、どちらもなければ空 |
+| `match(kind, title)` | クラスメソッド。**作品名が一致する作品**を探す（前後の空白・英字の大小は無視）。同じ種類を優先し、なければ種類違いでも同名のもの |
+| `created_at` / `updated_at` | 登録日時、更新日時（保存するたびに自動で更新） |
+
+並び順は更新日時の新しい順。「最近の作品」画面で使います。
+
+**Entry（半券）**
 
 **項目**
 
 | グループ | 項目 | 内容 |
 |---|---|---|
 | 共通 | `user` | 記録した人（`auth_user` への外部キー）。ユーザーを消すと半券も消える（`CASCADE`） |
+| | `work` | 結びついた作品（`hanken_work` への外部キー。なくてもよい）。作品を消しても半券は残り、空になる（`SET_NULL`）。結びつくと、半券に作品のリンクと画像が出る |
 | | `kind` / `title` | 種類、作品名（80文字まで） |
 | | `share` | 共有のしかた（初期値：名前つき） |
 | | `created_at` | 作成日時（自動） |
@@ -140,7 +159,7 @@ DB の `hanken_entry` テーブルになる `Entry`（半券1枚）を定義し�
 | 名前 | 機能 |
 |---|---|
 | `RangeInput` | 気分の入力をスライダー（`<input type="range">`）にする |
-| `shrink_photo()` | **写真の縮小**：スマホ写真の向きを直し、長辺1280pxの JPEG（品質85）に作り直す。撮影場所などの EXIF 情報は残らない |
+| `shrink_photo()` | **写真の縮小**：スマホ写真の向きを直し、長辺1280pxの JPEG（品質85）に作り直す。撮影場所などの EXIF 情報は残らない。`side` を渡すと長辺を変えられる（作品の画像は800px） |
 | `emo_field()` / `mood_field()` / `photo_field()` / `note_field()` | 同じ設定の入力欄を何度も書かないための作成関数 |
 | `PhotoSizeMixin` | 写真が10MBを超えていたらエラーにする |
 | `PhaseMixin` | 観る前／観た後の入力欄を1つの辞書にまとめる（`_phase.html` で使う）。`after_phase` を持つ |
@@ -148,11 +167,11 @@ DB の `hanken_entry` テーブルになる `Entry`（半券1枚）を定義し�
 **フォーム**
 
 | フォーム | 使う画面 | 機能 |
-|---|---|---|
+|---|---|---|　
 | `RecordForm` | 記録する | 種類・作品名・観る前・（観た後）・共有を受け取る |
 | | | `before_phase`：観る前の入力欄のまとめ |
 | | | `clean()`：「もう観終わった」にチェックしたのに、観た後の気持ちや気分がなければエラー |
-| | | `save(user)`：`Entry` を作って保存。写真は縮小。チェックがあれば観た後も同時に保存 |
+| | | `save(user)`：`Entry` を作って保存。`Work.match()` で作品名が一致する作品に結びつける。写真は縮小。チェックがあれば観た後も同時に保存 |
 | `AfterForm` | 観た後を記録 | 観た後の4項目を受け取る（気持ち・気分は必須） |
 | | | `save(entry)`：既存の半券に観た後を書き足す。写真を変えたら古いファイルを消して差し替え |
 | `ShareForm` | わたしの半券 | 共有のしかたを1つ受け取る |
@@ -196,6 +215,7 @@ URL ごとに呼ばれ、データを集めてテンプレートを返します�
 | `change_share()` | `/entry/<id>/share/` | 共有のしかたを変更（POST のみ） |
 | `delete_entry()` | `/entry/<id>/delete/` | 写真ファイルごと半券を削除（POST のみ） |
 | `share()` | `/share/` | 共有された半券を集め、選んだ「観る前の気持ち」で絞り込んで集計 |
+| `recent()` | `/recent/` | 管理画面で登録した作品を、映画・本・ドラマごとに更新日時の新しい順で10件ずつ表示。**ログイン・登録の直後に表示される**。時間で移動はせず、「記録をはじめる」で記録画面へ |
 | `calendar()` | `/calendar/?m=2026-10&d=17` | 自分の半券を月のカレンダーで数える。`m` で月、`d` で日を選ぶと、その日に観終わった半券も表示。おかしな値は今月として扱う |
 | `signup()` | `/accounts/signup/` | ユーザー登録してそのままログイン。ログイン済みなら記録画面へ |
 
@@ -213,6 +233,7 @@ URL ごとに呼ばれ、データを集めてテンプレートを返します�
 | `mine/` | `mine` | `mine` |
 | `share/` | `share` | `share` |
 | `calendar/` | `calendar` | `calendar` |
+| `recent/` | `recent` | `recent` |
 | `entry/<int:pk>/after/` | `after` | `add_after` |
 | `entry/<int:pk>/reflect/` | `reflect` | `reflect` |
 | `entry/<int:pk>/share/` | `change_share` | `change_share` |
@@ -233,7 +254,18 @@ URL ごとに呼ばれ、データを集めてテンプレートを返します�
 | `trend` | CSS のクラス名 | プラス → up、マイナス → down、0 → flat |
 
 ### admin.py：管理画面
-`/admin/` で半券を管理するための設定です。
+`/admin/` で半券と作品を管理するための設定です。
+
+**作品（WorkAdmin）**：画像の小さなプレビュー・作品名・種類・紹介・リンクの有無（✓／✗）・更新日時の一覧、種類で絞り込み、作品名で検索。編集画面では種類・作品名・紹介・リンク・画像・画像URLを入力し、「いま表示される画像」でプレビューと、どちら（アップロード／画像URL）が使われているかを確認できる。ここで追加・編集した作品が「最近の作品」に並びます。
+
+| 部品 | 機能 |
+|---|---|
+| `WorkAdminForm.clean_image()` | 画像が10MBを超えていたらエラー |
+| `save_model()` | 画像を変えたときだけ、`shrink_photo()` で長辺800px（`HANKEN_WORK_IMAGE_MAX_SIDE`）の JPEG に縮小して保存。差し替え・クリアしたら古いファイルを消す。最後に、まだ作品に結びついていない同名の半券を結びつける（作品をあとから登録した場合のため） |
+| `delete_model()` / `delete_queryset()` | 作品を削除したら画像ファイルも消す（1件ずつ・まとめて削除の両方） |
+| `thumb()` / `preview()` | 一覧と編集画面に、`cover_url`（実際に表示される画像）を表示 |
+
+**半券（EntryAdmin）**
 
 | 設定 | 機能 |
 |---|---|
@@ -246,10 +278,10 @@ URL ごとに呼ばれ、データを集めてテンプレートを返します�
 `HankenConfig`：アプリ名 `hanken`、管理画面での表示名「感情の半券」、id の型を決めています。
 
 ### migrations/0001_initial.py
-`models.py` から自動生成された、テーブルを作る手順です。`python manage.py migrate` で実行されます。**手で編集しません**。`models.py` を変えたら `makemigrations` で新しいファイルを作ります。
+`models.py` から自動生成された、テーブルを作る手順です。`0002_work.py` は作品テーブルを追加したとき、`0003_work_url.py` は作品にリンクを、`0004_work_image.py` は作品に画像を、`0005_work_image_url.py` は作品に画像URLを追加したときのものです。`0006_entry_work.py` は半券に作品を結びつける項目を追加し、すでにある半券も同名の作品に結びつけます（`RunPython` でデータも処理する例）。`python manage.py migrate` で実行されます。**手で編集しません**。`models.py` を変えたら `makemigrations` で新しいファイルを作ります。
 
 ### tests.py：自動テスト
-`python manage.py test hanken` で実行される11件のテストです。
+`python manage.py test hanken` で実行される19件のテストです。
 
 **準備用の関数**
 - `make()`：テスト用の半券をすぐ作る
@@ -274,7 +306,15 @@ URL ごとに呼ばれ、データを集めてテンプレートを返します�
 | `test_mine_page_and_delete` | わたしの半券の表示、共有の変更、削除 |
 | `test_calendar_counts_finished_stubs` | カレンダーは前後そろった自分の半券だけを数える（鑑賞中・他人の分は数えない）。日付を選ぶとその日の半券が出る |
 | `test_calendar_ignores_bad_params` | 13月・存在しない日付などでもエラーにならない |
-| `test_signup` | 登録すると記録画面へ移動する |
+| `test_recent_works_lists_ten_newest_per_kind` | 最近の作品は映画・本・ドラマの順に、更新日時の新しい10件ずつ。自動で移動する設定はない |
+| `test_recent_works_link` | リンクがある作品だけ作品名がリンクになり、別のタブで開く。`javascript:` のリンクは保存できない |
+| `test_work_image_upload_from_admin` | 管理画面から画像を登録すると、長辺800pxの JPEG になって最近の作品に表示される。差し替え・削除で古いファイルが消える |
+| `test_work_cover_prefers_upload_over_image_url` | 画像URLだけならそれを表示、アップロードした画像があればそちらを優先。`javascript:` は保存できない |
+| `test_new_entry_links_to_matching_work` | 半券を追加すると同名の作品に結びつき（同じ種類を優先、種類違いでも可）、作品のリンクと画像が半券に出る。一致しなければ結びつかない |
+| `test_work_added_later_links_existing_entries` | 作品をあとから登録すると、同名の半券（英字の大小違いも）が結びつく。作品を消しても半券は残る |
+| `test_admin_tab_only_for_staff` | 「管理画面」のタブは管理者にだけ表示される |
+| `test_login_goes_to_recent_works` | ログインすると最近の作品へ移動する |
+| `test_signup` | 登録すると最近の作品へ移動する |
 
 テストは本物の `db.sqlite3` を使わず、テスト用の DB を毎回作って最後に消します。
 

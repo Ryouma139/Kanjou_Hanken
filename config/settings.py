@@ -76,10 +76,12 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "hanken:record"
+LOGIN_REDIRECT_URL = "hanken:recent"
 LOGOUT_REDIRECT_URL = "login"
 
 # 写真のアップロード上限（1枚 10MB）。保存時に長辺1280pxのJPEGへ縮小します。
 DATA_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024
 HANKEN_PHOTO_MAX_BYTES = 10 * 1024 * 1024
 HANKEN_PHOTO_MAX_SIDE = 1280
+# 「最近の作品」の画像は長辺800pxに縮小します。
+HANKEN_WORK_IMAGE_MAX_SIDE = 800

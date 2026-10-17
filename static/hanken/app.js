@@ -42,8 +42,8 @@
     s.addEventListener('change', function () { s.form.submit(); });
   });
 
-  // 写真が読み込めないときは気持ちの色で描く
-  document.querySelectorAll('.tile img').forEach(function (img) {
+  // 写真が読み込めないときは気持ち（作品は種類）の色で描く
+  document.querySelectorAll('.tile img, .cover img, .stub-cover img').forEach(function (img) {
     img.addEventListener('error', function () {
       var t = img.parentNode;
       t.classList.add('emo');
