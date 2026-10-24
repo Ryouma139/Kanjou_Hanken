@@ -5,7 +5,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
-from .emotions import EMOTION_CHOICES, KIND_CHOICES, SHARE_CHOICES
+from .emotions import AD_PLACEMENT_CHOICES, EMOTION_CHOICES, KIND_CHOICES, SHARE_CHOICES
 
 
 def photo_path(instance, filename):
@@ -58,6 +58,27 @@ class Work(models.Model):
             return None
         same = cls.objects.filter(title__iexact=title)
         return same.filter(kind=kind).first() or same.first()
+
+
+class Ad(models.Model):
+    """管理画面で登録する広告タグ。選んだ場所に「PR」付きで、HTML をそのまま表示する。"""
+
+    name = models.CharField("管理用の名前", max_length=80, help_text="画面には出ません。どの広告か見分けるための名前です。")
+    placement = models.CharField("表示する場所", max_length=10, choices=AD_PLACEMENT_CHOICES, default="footer")
+    html = models.TextField("広告タグ（HTML）",
+                            help_text="A8.net などの広告タグを、改変せずそのまま貼り付けてください。"
+                                      "「PR」の表示は自動で付きます。HTML はそのままページに出るので、信頼できるタグだけを入れてください。")
+    is_active = models.BooleanField("表示する", default=True)
+    order = models.PositiveSmallIntegerField("並び順", default=0, help_text="同じ場所に複数あるとき、小さいほど先に表示します。")
+    updated_at = models.DateTimeField("更新日時", auto_now=True)
+
+    class Meta:
+        ordering = ["placement", "order", "-updated_at"]
+        verbose_name = "広告"
+        verbose_name_plural = "広告"
+
+    def __str__(self):
+        return self.name
 
 
 class Entry(models.Model):

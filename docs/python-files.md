@@ -98,6 +98,7 @@ URL の入口の表です。
 | `KIND_CHOICES` / `KIND_NAME` | 作品の種類：本・映画・ドラマ | models、forms、hanken_tags |
 | `SHARE_CHOICES` | 共有：名前つきで共有・匿名で共有・自分だけ | models、forms |
 | `MOOD_WORDS` | 気分1〜10の言葉（1＝とてもつらい … 10＝最高） | hanken_tags |
+| `AD_PLACEMENT_CHOICES` | 広告を表示する場所：全ページの下・ふり返り画面・最近の作品 | models |
 
 気持ちの10種：嬉しい・ワクワク・穏やか・じんとする・寂しい・悲しい・不安・イライラ・疲れた・ぼんやり
 
@@ -120,6 +121,16 @@ DB の `hanken_entry` テーブルになる `Entry`（半券1枚）と、`hanken
 | `created_at` / `updated_at` | 登録日時、更新日時（保存するたびに自動で更新） |
 
 並び順は更新日時の新しい順。「最近の作品」画面で使います。
+
+**Ad（広告）**：管理画面で登録する広告タグ（`hanken_ad` テーブル）
+
+| 項目 | 内容 |
+|---|---|
+| `name` | 管理用の名前（画面には出ない） |
+| `placement` | 表示する場所（`AD_PLACEMENT_CHOICES`） |
+| `html` | 広告タグ（A8.net などの HTML をそのまま） |
+| `is_active` / `order` | 表示する／しない、同じ場所での並び順 |
+| `updated_at` | 更新日時 |
 
 **Entry（半券）**
 
@@ -242,7 +253,15 @@ URL ごとに呼ばれ、データを集めてテンプレートを返します�
 `<int:pk>` は数字だけを受け取り、view に `pk` として渡します。
 
 ### templatetags/hanken_tags.py：表示用フィルタ
-テンプレートで `{% load hanken_tags %}` と書くと使えるフィルタです。
+テンプレートで `{% load hanken_tags %}` と書くと使えるフィルタとタグです。
+
+**タグ**
+
+| タグ | 機能 |
+|---|---|
+| `{% ads "footer" %}` | その場所の表示中の広告を、`templates/hanken/_ads.html` で「PR」付きにして出す（`inclusion_tag`）。広告がなければ何も出さない |
+
+**フィルタ**
 
 | フィルタ | 機能 | 例 |
 |---|---|---|
@@ -255,6 +274,8 @@ URL ごとに呼ばれ、データを集めてテンプレートを返します�
 
 ### admin.py：管理画面
 `/admin/` で半券と作品を管理するための設定です。
+
+**広告（AdAdmin）**：名前・場所・表示する・並び順・更新日時の一覧。「表示する」と「並び順」は一覧のまま変更できる（`list_editable`）。場所と表示中かどうかで絞り込み。
 
 **作品（WorkAdmin）**：画像の小さなプレビュー・作品名・種類・紹介・リンクの有無（✓／✗）・更新日時の一覧、種類で絞り込み、作品名で検索。編集画面では種類・作品名・紹介・リンク・画像・画像URLを入力し、「いま表示される画像」でプレビューと、どちら（アップロード／画像URL）が使われているかを確認できる。ここで追加・編集した作品が「最近の作品」に並びます。
 
@@ -278,10 +299,10 @@ URL ごとに呼ばれ、データを集めてテンプレートを返します�
 `HankenConfig`：アプリ名 `hanken`、管理画面での表示名「感情の半券」、id の型を決めています。
 
 ### migrations/0001_initial.py
-`models.py` から自動生成された、テーブルを作る手順です。`0002_work.py` は作品テーブルを追加したとき、`0003_work_url.py` は作品にリンクを、`0004_work_image.py` は作品に画像を、`0005_work_image_url.py` は作品に画像URLを追加したときのものです。`0006_entry_work.py` は半券に作品を結びつける項目を追加し、すでにある半券も同名の作品に結びつけます（`RunPython` でデータも処理する例）。`python manage.py migrate` で実行されます。**手で編集しません**。`models.py` を変えたら `makemigrations` で新しいファイルを作ります。
+`models.py` から自動生成された、テーブルを作る手順です。`0002_work.py` は作品テーブルを追加したとき、`0003_work_url.py` は作品にリンクを、`0004_work_image.py` は作品に画像を、`0005_work_image_url.py` は作品に画像URLを追加したときのものです。`0006_entry_work.py` は半券に作品を結びつける項目を追加し、すでにある半券も同名の作品に結びつけます（`RunPython` でデータも処理する例）。`0007_ad.py` は広告テーブルを追加したときのものです。`python manage.py migrate` で実行されます。**手で編集しません**。`models.py` を変えたら `makemigrations` で新しいファイルを作ります。
 
 ### tests.py：自動テスト
-`python manage.py test hanken` で実行される19件のテストです。
+`python manage.py test hanken` で実行される20件のテストです。
 
 **準備用の関数**
 - `make()`：テスト用の半券をすぐ作る
@@ -312,6 +333,7 @@ URL ごとに呼ばれ、データを集めてテンプレートを返します�
 | `test_work_cover_prefers_upload_over_image_url` | 画像URLだけならそれを表示、アップロードした画像があればそちらを優先。`javascript:` は保存できない |
 | `test_new_entry_links_to_matching_work` | 半券を追加すると同名の作品に結びつき（同じ種類を優先、種類違いでも可）、作品のリンクと画像が半券に出る。一致しなければ結びつかない |
 | `test_work_added_later_links_existing_entries` | 作品をあとから登録すると、同名の半券（英字の大小違いも）が結びつく。作品を消しても半券は残る |
+| `test_ads_render_raw_html_with_pr_label` | 広告タグが改変されずに「PR」付きで出る。場所の指定と「表示する」が効く。広告がなければ枠も出ない |
 | `test_admin_tab_only_for_staff` | 「管理画面」のタブは管理者にだけ表示される |
 | `test_login_goes_to_recent_works` | ログインすると最近の作品へ移動する |
 | `test_signup` | 登録すると最近の作品へ移動する |

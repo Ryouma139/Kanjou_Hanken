@@ -9,7 +9,7 @@ from django.utils import timezone
 from PIL import Image
 
 from . import analysis
-from .models import Entry, Work
+from .models import Ad, Entry, Work
 
 User = get_user_model()
 
@@ -229,6 +229,23 @@ class ViewTests(TestCase):
         e.work.delete()
         e.refresh_from_db()
         self.assertIsNone(e.work)  # 作品を消しても半券は残る
+
+    def test_ads_render_raw_html_with_pr_label(self):
+        tag = ('<a href="https://px.a8.net/svt/ejp?a8mat=X&a8ejpredirect=https%3A%2F%2Fexample.com%2F" rel="nofollow">広告文</a>'
+               '<img border="0" width="1" height="1" src="https://www15.a8.net/0.gif?a8mat=X" alt="">')
+        Ad.objects.create(name="下の広告", placement="footer", html=tag)
+        Ad.objects.create(name="最近の作品の広告", placement="recent", html="<b>recent-ad</b>")
+        Ad.objects.create(name="止めた広告", placement="footer", html="<b>off-ad</b>", is_active=False)
+
+        r = self.client.get(reverse("hanken:mine"))
+        self.assertContains(r, tag)  # 改変されずにそのまま出る
+        self.assertContains(r, '<span class="pr">PR</span>')
+        self.assertNotContains(r, "recent-ad")
+        self.assertNotContains(r, "off-ad")
+        self.assertContains(self.client.get(reverse("hanken:recent")), "<b>recent-ad</b>")
+
+        Ad.objects.all().delete()
+        self.assertNotContains(self.client.get(reverse("hanken:mine")), 'class="ads"')
 
     def test_admin_tab_only_for_staff(self):
         admin_link = f'href="{reverse("admin:index")}">管理画面'

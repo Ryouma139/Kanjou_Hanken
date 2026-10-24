@@ -1,0 +1,7 @@
+{% if ads %}
+<aside class="ads" aria-label="広告">
+  {% for ad in ads %}
+  <div class="ad"><span class="pr">PR</span><div class="ad-body">{{ ad.html|safe }}</div></div>
+  {% endfor %}
+</aside>
+{% endif %}

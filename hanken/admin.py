@@ -4,7 +4,16 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from .forms import shrink_photo
-from .models import Entry, Work
+from .models import Ad, Entry, Work
+
+
+@admin.register(Ad)
+class AdAdmin(admin.ModelAdmin):
+    list_display = ("name", "placement", "is_active", "order", "updated_at")
+    list_editable = ("is_active", "order")
+    list_filter = ("placement", "is_active")
+    search_fields = ("name",)
+    fields = ("name", "placement", "html", "is_active", "order")
 
 
 class WorkAdminForm(forms.ModelForm):

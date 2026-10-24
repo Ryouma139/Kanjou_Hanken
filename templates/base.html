@@ -1,4 +1,4 @@
-{% load static %}<!doctype html>
+{% load static hanken_tags %}<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
@@ -44,6 +44,8 @@
   <main class="list">{% block content %}{% endblock %}</main>
 
   <p class="care">気持ちの記録は心の整理に役立ちますが、つらさが長く続くときは一人で抱えないでください。身近な人や、<a href="https://www.mhlw.go.jp/mamorouyokokoro/soudan/tel" target="_blank" rel="noopener">厚生労働省「まもろうよ こころ」の電話相談窓口</a>に相談できます。</p>
+
+  {% ads "footer" %}
 </div>
 <script src="{% static 'hanken/app.js' %}"></script>
 </body>

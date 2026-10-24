@@ -1,8 +1,15 @@
 from django import template
 
 from ..emotions import EMOTION_CHAR, EMOTION_NAME, KIND_NAME, MOOD_WORDS
+from ..models import Ad
 
 register = template.Library()
+
+
+@register.inclusion_tag("hanken/_ads.html")
+def ads(placement):
+    """{% ads "footer" %} のように使う。その場所の表示中の広告を「PR」付きで出す。"""
+    return {"ads": Ad.objects.filter(placement=placement, is_active=True)}
 
 
 @register.filter

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load hanken_tags %}
 {% block title %}最近の作品｜感情の半券{% endblock %}
 {% block content %}
 <div class="recent-head">
@@ -33,4 +34,5 @@
   {% endif %}
 </section>
 {% endfor %}
+{% ads "recent" %}
 {% endblock %}
